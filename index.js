@@ -1,10 +1,26 @@
 import express from 'express';
+import session from 'express-session';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 const porta = 3000;
 const host = '0.0.0.0';
 
+app.use(express.static('./pages/public'));  //manda busca na a pagina login
+
+app.use(session({
+    secret: 'MinhaChave3232c',
+    resave: false,                  
+    saveUninitialized: true,      
+    cookie: {
+        secure:false, 
+        httpOnly:true,
+        maxAge:1000 * 60 * 30 //tempo de 30 minutos para excluir a sessao
+    }
+}));
+
+app.use(cookieParser());
 var listaaluno = [];
 
 function cadastroaluno(req, resp) {
@@ -111,6 +127,11 @@ function cadastroaluno(req, resp) {
 
 
 function cadastrar(req, resp) {
+  //recupera cookies enviados do navegador
+    const dataHoraUltimoAcesso = req.cookies['dataHoraUltimoAcesso'];
+    if(!dataHoraUltimoAcesso){
+        dataHoraUltimoAcesso = '';
+    }
     
     const nome = req.body.nome;
     const data = req.body.data;
@@ -425,8 +446,14 @@ function cadastrar(req, resp) {
             
             resp.write(`
                 <button type="submit">Cadastrar</button>
+                <div>
+                     <li class="nav-item">
+                        <a class="nav-link disabled" aria-disabled="true"> seu ultimo acesso foi realizado em ${dataHoraUltimoAcesso} </a>
+                     </li>
+                 </div>
             `);
             resp.write(`
+
                 </form>
             `);
                         //
@@ -436,6 +463,10 @@ function cadastrar(req, resp) {
 } // fim da funcao cadastrar
 
 function menu(req, resp){
+    const dataHoraUltimoAcesso = req.cookies['dataHoraUltimoAcesso'];
+    if(!dataHoraUltimoAcesso){
+        dataHoraUltimoAcesso = '';
+    }
     resp.send(`
 
  <html lang="pt-BR">
@@ -453,6 +484,14 @@ function menu(req, resp){
         <nav class="navbar bg-body-tertiary">
             <div class="container-fluid">
                 <a class="navbar-brand" href="/lista">Lista</a>
+            </div>
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/logout">Sair</a>
+            </div>
+            <div>
+             <li class="nav-item">
+                <a class="nav-link disabled" aria-disabled="true"> seu ultimo acesso foi realizado em ${dataHoraUltimoAcesso} </a>
+             </li>
             </div>
         </nav>
 
@@ -574,13 +613,52 @@ function lista(req, resp) {
 
     resp.end(); // Envia a resposta
 }
+function autenticarus(req , resp){
+    const usuario = req.body.usuario;
+    const senha = req.body.senha;
 
+    if(usuario === 'admin' && senha === '123'){
+        req.session.usuariologado = true;
+        resp.cookie('dataHoraUltimoAcesso',new Date().toLocaleString()),{maxAge: 1000 *60 *60 *24 *30,} ;      //criando cookie
+        resp.redirect('/');
+    }else{
+        resp.write(` <html lang="pt-BR">
+                    <head>
+                    <title>Menu</title>
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+                    </head>
+                    <body>
+                        <div class="alert alert-dark" role="alert">
+                        Usuario ou senha invalida!
+                        </div>
+                        <div>
+                        <a href= "/login.html"  class="btn btn-outline-danger">tente novamente</a>
+                        </div>  
+                    </body>`);
+    }
+}
+function autenticacao(req,resp,next){
+    if(req.session.usuariologado){
+        next();   // permite acesso
+    }else{
+        resp.write('/login.html');
+    }
+}
+app.get('/login',(req,resp)=>{
+    resp.redirect('/login.html');
+})
 
+app.get('/logout',(req,resp)=>{
+    req.session.destroy(); //elimina a sessao
+    resp.redirect('/login.html');
+});
+
+app.post('/login',autenticarus);
 // Roteamento das páginas
-app.get('/',menu);
-app.get('/cadastraraluno', cadastroaluno); // Exibe o formulário
-app.post('/cadastros', cadastrar); // Processa o cadastro
-app.get('/lista', lista); // Exibe a lista de alunos cadastrados
+app.get('/',autenticacao,menu);
+app.get('/cadastraraluno',autenticacao ,cadastroaluno); // Exibe o formulário
+app.post('/cadastros',autenticacao ,cadastrar); // Processa o cadastro
+app.get('/lista',autenticacao ,lista); // Exibe a lista de alunos cadastrados
 
 // Inicia o servidor
 app.listen(porta, host, () => {
