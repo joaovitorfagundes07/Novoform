@@ -642,7 +642,7 @@ function autenticacao(req,resp,next){
     if(req.session.usuariologado){
         next();   // permite acesso
     }else{
-        resp.write('/login.html');
+        resp.redirect('/login.html');
     }
 }
 app.get('/login',(req,resp)=>{
@@ -656,9 +656,6 @@ app.get('/logout',(req,resp)=>{
 
 app.post('/login',autenticarus);
 
-app.get('/login.html', (req, resp) => {
-    resp.sendFile(path.join(__dirname, 'pages', 'public', 'login.html'));
-});
 // Roteamento das páginas
 app.get('/',autenticacao,menu);
 app.get('/cadastraraluno',autenticacao ,cadastroaluno); // Exibe o formulário
