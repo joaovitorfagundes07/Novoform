@@ -7,7 +7,10 @@ app.use(express.urlencoded({ extended: true }));
 const porta = 3000;
 const host = '0.0.0.0';
 
-app.use(express.static('./pages/public/login.html'));  //manda busca na a pagina login
+console.log(path.join(__dirname, 'pages', 'public', 'login.html'));
+
+
+app.use(express.static('./pages/public'));  //manda busca na a pagina login
 
 app.use(session({
     secret: 'MinhaChave3232c',
@@ -644,9 +647,9 @@ function autenticacao(req,resp,next){
         resp.write('/login.html');
     }
 }
-app.get('/login',(req,resp)=>{
-    resp.redirect('/login.html');
-})
+app.get('/login.html', (req, resp) => {
+    resp.sendFile(path.join(__dirname, 'pages', 'public', 'login.html'));
+});
 
 app.get('/logout',(req,resp)=>{
     req.session.destroy(); //elimina a sessao
