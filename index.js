@@ -646,9 +646,10 @@ function autenticacao(req,resp,next){
         resp.write('/login.html');
     }
 }
-app.get('/login',(req,resp)=>{
-    resp.redirect('/login.html');
-})
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'login.html'));
+  });
+  
 
 app.get('/logout',(req,resp)=>{
     req.session.destroy(); //elimina a sessao
