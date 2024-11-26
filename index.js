@@ -7,7 +7,7 @@ app.use(express.urlencoded({ extended: true }));
 const porta = 3000;
 const host = '0.0.0.0';
 
-app.use(express.static('./pages/public'));  //manda busca na a pagina login
+app.use(express.static('./pages/public/login.html'));  //manda busca na a pagina login
 
 app.use(session({
     secret: 'MinhaChave3232c',
